@@ -34,7 +34,7 @@ setup(
     install_requires=[
         "click >= 2.0",
         "Pillow >= 2.7.0",
-        "pyephem >= 3.7.5.0",
+        "skyfield >= 1.3",
         "pyshp >= 1.2.1",
         "requests >= 2.0.0",
     ],

@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 from math import asin, atan2, cos, degrees, pi, radians, sin, sqrt
 
-import ephem
 from requests import get
+from skyfield.sgp4lib import EarthSatellite as SkyFieldEarthSatellite
 
 
 ALIASES = {
@@ -84,19 +84,18 @@ class EarthSatellite(object):
                 raise ValueError("Unable to find TLE for {}".format(number))
         else:
             raise ValueError("No SATCAT number or TLE file provided")
-        self._satellite = ephem.readtle(*tle)
-        self.argument_of_periapsis = float(self._satellite._ap.norm)
-        self.eccentricity = self._satellite._e
-        self.epoch = self._satellite._epoch.datetime()
-        self.inclination = float(self._satellite._inc.norm)
-        self.mean_anomaly_at_epoch = float(self._satellite._M.norm)
-        self.mean_motion_revs_per_day = self._satellite._n
+        self._satellite = SkyFieldEarthSatellite(*tle[1:3])
+        self.argument_of_periapsis = float(self._satellite.model.argpo)  # deg/rad?
+        self.eccentricity = self._satellite.model.ecco
+        self.epoch = self._satellite.epoch.utc_datetime()
+        self.inclination = float(self._satellite.model.inclo) # deg/rad?
+        self.mean_anomaly_at_epoch = float(self._satellite.model.mo) # deg/rad?
+        self.mean_motion_radians_per_second = self._satellite.model.no / 60
         self.name = tle[0].strip()
         self.observer_elevation = observer_elevation
         self.observer_latitude = observer_latitude
         self.observer_longitude = observer_longitude
-        self.orbital_period = timedelta(days=1) / self.mean_motion_revs_per_day
-        self.mean_motion = 2 * pi / self.orbital_period.total_seconds()
+        self.orbital_period = timedelta(seconds=2 * pi / self.mean_motion_radians_per_second)
         self.apoapsis_latitude = degrees(asin(
             sin(self.argument_of_periapsis + pi) * sin(self.inclination)
         ))
